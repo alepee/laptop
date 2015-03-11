@@ -109,7 +109,6 @@ gem_install_or_update() {
   else
     fancy_echo "Installing %s ..." "$1"
     gem install "$@"
-    rbenv rehash
   fi
 }
 
@@ -146,30 +145,19 @@ brew_install_or_upgrade 'qt'
 brew_install_or_upgrade 'hub'
 brew_install_or_upgrade 'node'
 
-brew_install_or_upgrade 'rbenv'
-brew_install_or_upgrade 'ruby-build'
+if ! command -v rvm >/dev/null; then
+  fancy_echo "Installing RVM ..."
+    curl -fsS \
+      https://get.rvm.io | bash -s stable --ruby=2.0.0-p451
+else
+  fancy_echo "RVM already installed. Skipping ..."
+fi
 
-# shellcheck disable=SC2016
-append_to_zshrc 'eval "$(rbenv init - zsh --no-rehash)"' 1
+gem_install_or_update 'bundler'
 
 brew_install_or_upgrade 'openssl'
 brew unlink openssl && brew link openssl --force
 brew_install_or_upgrade 'libyaml'
-
-ruby_version="$(curl -sSL http://ruby.thoughtbot.com/latest)"
-
-eval "$(rbenv init - zsh)"
-
-if ! rbenv versions | grep -Fq "$ruby_version"; then
-  rbenv install -s "$ruby_version"
-fi
-
-rbenv global "$ruby_version"
-rbenv shell "$ruby_version"
-
-gem update --system
-
-gem_install_or_update 'bundler'
 
 fancy_echo "Configuring Bundler ..."
   number_of_cores=$(sysctl -n hw.ncpu)
